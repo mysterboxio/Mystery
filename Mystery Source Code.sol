@@ -1,4 +1,28 @@
-// SPDX-License-Identifier: Unlicensed
+/**
+ *Submitted for verification at BscScan.com on 2022-03-02
+*/
+
+/*                                                                                                                                                            
+MMMMMMMM               MMMMMMMMYYYYYYY       YYYYYYY   SSSSSSSSSSSSSSS TTTTTTTTTTTTTTTTTTTTTTTEEEEEEEEEEEEEEEEEEEEEERRRRRRRRRRRRRRRRR   YYYYYYY       YYYYYYY
+M:::::::M             M:::::::MY:::::Y       Y:::::Y SS:::::::::::::::ST:::::::::::::::::::::TE::::::::::::::::::::ER::::::::::::::::R  Y:::::Y       Y:::::Y
+M::::::::M           M::::::::MY:::::Y       Y:::::YS:::::SSSSSS::::::ST:::::::::::::::::::::TE::::::::::::::::::::ER::::::RRRRRR:::::R Y:::::Y       Y:::::Y
+M:::::::::M         M:::::::::MY::::::Y     Y::::::YS:::::S     SSSSSSST:::::TT:::::::TT:::::TEE::::::EEEEEEEEE::::ERR:::::R     R:::::RY::::::Y     Y::::::Y
+M::::::::::M       M::::::::::MYYY:::::Y   Y:::::YYYS:::::S            TTTTTT  T:::::T  TTTTTT  E:::::E       EEEEEE  R::::R     R:::::RYYY:::::Y   Y:::::YYY
+M:::::::::::M     M:::::::::::M   Y:::::Y Y:::::Y   S:::::S                    T:::::T          E:::::E               R::::R     R:::::R   Y:::::Y Y:::::Y   
+M:::::::M::::M   M::::M:::::::M    Y:::::Y:::::Y     S::::SSSS                 T:::::T          E::::::EEEEEEEEEE     R::::RRRRRR:::::R     Y:::::Y:::::Y    
+M::::::M M::::M M::::M M::::::M     Y:::::::::Y       SS::::::SSSSS            T:::::T          E:::::::::::::::E     R:::::::::::::RR       Y:::::::::Y     
+M::::::M  M::::M::::M  M::::::M      Y:::::::Y          SSS::::::::SS          T:::::T          E:::::::::::::::E     R::::RRRRRR:::::R       Y:::::::Y      
+M::::::M   M:::::::M   M::::::M       Y:::::Y              SSSSSS::::S         T:::::T          E::::::EEEEEEEEEE     R::::R     R:::::R       Y:::::Y       
+M::::::M    M:::::M    M::::::M       Y:::::Y                   S:::::S        T:::::T          E:::::E               R::::R     R:::::R       Y:::::Y       
+M::::::M     MMMMM     M::::::M       Y:::::Y                   S:::::S        T:::::T          E:::::E       EEEEEE  R::::R     R:::::R       Y:::::Y       
+M::::::M               M::::::M       Y:::::Y       SSSSSSS     S:::::S      TT:::::::TT      EE::::::EEEEEEEE:::::ERR:::::R     R:::::R       Y:::::Y       
+M::::::M               M::::::M    YYYY:::::YYYY    S::::::SSSSSS:::::S      T:::::::::T      E::::::::::::::::::::ER::::::R     R:::::R    YYYY:::::YYYY    
+M::::::M               M::::::M    Y:::::::::::Y    S:::::::::::::::SS       T:::::::::T      E::::::::::::::::::::ER::::::R     R:::::R    Y:::::::::::Y    
+MMMMMMMM               MMMMMMMM    YYYYYYYYYYYYY     SSSSSSSSSSSSSSS         TTTTTTTTTTT      EEEEEEEEEEEEEEEEEEEEEERRRRRRRR     RRRRRRR    YYYYYYYYYYYYY    
+                                                                                                                                                             
+*/     
+
+// SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.11;
 
@@ -336,16 +360,6 @@ contract Ownable is Context {
     }
 }
 
-interface IAntiSnipe {
-  function setTokenOwner(address owner, address pair) external;
-
-  function onPreTransferCheck(
-    address from,
-    address to,
-    uint256 amount
-  ) external returns (bool checked);
-}
-
 contract Mystery is IERC20, Ownable {
     using Address for address;
     
@@ -357,9 +371,9 @@ contract Mystery is IERC20, Ownable {
 
     uint256 constant _totalSupply = 1_000_000_000 * (10 ** _decimals);
 
-    //For ease to the end-user these checks do not adjust for burnt tokens and should be set accordingly.
-    uint256 public _maxTxAmount = (_totalSupply * 1) / 400; //~0.25%
-    uint256 public _maxWalletSize = (_totalSupply * 1) / 200; //0.50 %
+
+    uint256 public _maxTxAmount = (_totalSupply * 1) / 800; //~0.125%
+    uint256 public _maxWalletSize = (_totalSupply * 1) / 400; //0.25%
 
     mapping (address => uint256) _balances;
     mapping (address => mapping (address => uint256)) _allowances;
@@ -371,13 +385,13 @@ contract Mystery is IERC20, Ownable {
     mapping (address => bool) isTxLimitExempt;
 
     uint256 liquidityFee = 20;
-    uint256 marketingFee = 50;
-    uint256 devFee = 40;
+    uint256 giveawayFee = 20;
+    uint256 devmarketingFee = 70;
     uint256 totalFee = 110;
     uint256 sellBias = 0;
 
     //Higher tax for a period of time from the first purchase only, per address
-    uint256 sellPercent = 220;
+    uint256 sellPercent = 200;
     uint256 sellPeriod = 24 hours;
 
     uint256 antiDumpTax = 300;
@@ -387,8 +401,8 @@ contract Mystery is IERC20, Ownable {
     uint256 feeDenominator = 1000;
 
     address public immutable liquidityReceiver;
-    address payable public immutable marketingReceiver;
-    address payable public immutable devReceiver;
+    address payable public immutable giveawayReceiver;
+    address payable public immutable devmarketingReceiver;
 
     uint256 targetLiquidity = 40;
     uint256 targetLiquidityDenominator = 100;
@@ -405,21 +419,17 @@ contract Mystery is IERC20, Ownable {
     uint256 public launchedAt;
     uint256 public launchedTime;
  
-    IAntiSnipe public antisnipe;
-    bool public protectionEnabled = true;
-    bool public protectionDisabled = false;
-
     bool public swapEnabled = true;
     uint256 public swapThreshold = _totalSupply / 400; //0.25%
     uint256 public swapMinimum = _totalSupply / 10000; //0.01%
     bool inSwap;
     modifier swapping() { inSwap = true; _; inSwap = false; }
 
-    constructor (address _lp, address _marketing, address _dev) {
-        //Suggest setting liquidity receiver to DEAD to lock funds in the project and avoid centralization
+    constructor (address _lp, address _giveaway, address _devmarketing) {
+
         liquidityReceiver = _lp;
-        marketingReceiver = payable(_marketing);
-        devReceiver = payable(_dev);
+        giveawayReceiver = payable(_giveaway);
+        devmarketingReceiver = payable(_devmarketing);
 
         router = IDEXRouter(routerAddress);
         pair = IDEXFactory(router.factory()).createPair(router.WETH(), address(this));
@@ -514,9 +524,6 @@ contract Mystery is IERC20, Ownable {
         if(shouldSwapBack(recipient)){ if (amount > 0) swapBack(amount); }
         
         _balances[recipient] += amountReceived;
-            
-        if(launched() && protectionEnabled)
-            antisnipe.onPreTransferCheck(sender, recipient, amount);
 
         emit Transfer(sender, recipient, amountReceived);
         return true;
@@ -613,8 +620,8 @@ contract Mystery is IERC20, Ownable {
         uint256 totalETHFee = totalFee - dynamicLiquidityFee / 2;
 
         uint256 amountLiquidity = (contractBalance * dynamicLiquidityFee) / totalETHFee / 2;
-        uint256 amountMarketing = (contractBalance * marketingFee) / totalETHFee;
-        uint256 amountDev = contractBalance - (amountLiquidity + amountMarketing);
+        uint256 amountGiveaway= (contractBalance * giveawayFee) / totalETHFee;
+        uint256 amountDevMarketing = contractBalance - (amountLiquidity + amountGiveaway);
 
         if(amountToLiquify > 0) {
             //Guaranteed swap desired to prevent trade blockages, return values ignored
@@ -629,11 +636,11 @@ contract Mystery is IERC20, Ownable {
             emit AutoLiquify(amountLiquidity, amountToLiquify);
         }
         
-        if (amountMarketing > 0)
-            marketingReceiver.transfer(amountMarketing);
+        if (amountGiveaway > 0)
+            giveawayReceiver.transfer(amountGiveaway);
             
-        if (amountDev > 0)
-            devReceiver.transfer(amountDev);
+        if (amountDevMarketing > 0)
+            devmarketingReceiver.transfer(amountDevMarketing);
 
     }
 
@@ -672,29 +679,6 @@ contract Mystery is IERC20, Ownable {
         _allowances[owner()][routerAddress] = 0;
         super.renounceOwnership();
     }
-
-    function setProtectionEnabled(bool _protect) external onlyOwner {
-        if (_protect)
-            require(!protectionDisabled, "Protection disabled");
-        protectionEnabled = _protect;
-        emit ProtectionToggle(_protect);
-    }
-    
-    function setProtection(address _protection, bool _call) external onlyOwner {
-        if (_protection != address(antisnipe)){
-            require(!protectionDisabled, "Protection disabled");
-            antisnipe = IAntiSnipe(_protection);
-        }
-        if (_call)
-            antisnipe.setTokenOwner(address(this), pair);
-        
-        emit ProtectionSet(_protection);
-    }
-    
-    function disableProtection() external onlyOwner {
-        protectionDisabled = true;
-        emit ProtectionDisabled();
-    }
     
     function setLiquidityProvider(address _provider) external onlyOwner {
         require(_provider != pair && _provider != routerAddress, "Can't alter trading contracts in this manner.");
@@ -731,7 +715,6 @@ contract Mystery is IERC20, Ownable {
     }
 
     function setTxLimit(uint256 numerator, uint256 divisor) external onlyOwner {
-        require(numerator > 0 && divisor > 0 && (numerator * 1000) / divisor >= 5, "Transaction limits too low");
         _maxTxAmount = (_totalSupply * numerator) / divisor;
         emit TransactionLimitSet(_maxTxAmount);
     }
@@ -754,13 +737,13 @@ contract Mystery is IERC20, Ownable {
         emit TrasactionLimitExemptSet(holder, exempt);
     }
 
-    function setFees(uint256 _liquidityFee, uint256 _marketingFee, uint256 _devFee, uint256 _sellBias, uint256 _feeDenominator) external onlyOwner {
+    function setFees(uint256 _liquidityFee, uint256 _giveawayFee, uint256 _devmarketingFee, uint256 _sellBias, uint256 _feeDenominator) external onlyOwner {
         require((_liquidityFee / 2) * 2 == _liquidityFee, "Liquidity fee must be an even number due to rounding");
         liquidityFee = _liquidityFee;
-        marketingFee = _marketingFee;
-        devFee = _devFee;
+        giveawayFee = _giveawayFee;
+        devmarketingFee = _devmarketingFee;
         sellBias = _sellBias;
-        totalFee = _liquidityFee + _marketingFee + _devFee;
+        totalFee = _liquidityFee + _giveawayFee + _devmarketingFee;
         feeDenominator = _feeDenominator;
         require(totalFee <= feeDenominator / 4, "Fees too high");
         require(sellBias <= totalFee, "Incorrect sell bias");
@@ -787,24 +770,7 @@ contract Mystery is IERC20, Ownable {
         emit LiquidityPoolSet(_pool, _enabled);
     }
 
-	function airdrop(address[] calldata _addresses, uint256[] calldata _amount) external onlyOwner
-    {
-        require(_addresses.length == _amount.length, "Array lengths don't match");
-        bool previousSwap = swapEnabled;
-        swapEnabled = false;
-        //This function may run out of gas intentionally to prevent partial airdrops
-        for (uint256 i = 0; i < _addresses.length; i++) {
-            require(!liquidityPools[_addresses[i]] && _addresses[i] != address(0), "Can't airdrop the liquidity pool or address 0");
-            _transferFrom(msg.sender, _addresses[i], _amount[i] * (10 ** _decimals));
-            lastBuy[_addresses[i]] = block.timestamp;
-        }
-        swapEnabled = previousSwap;
-        emit AirdropSent(msg.sender);
-    }
-
     event AutoLiquify(uint256 amount, uint256 amountToken);
-    event ProtectionSet(address indexed protection);
-    event ProtectionDisabled();
     event LiquidityProviderSet(address indexed provider);
     event SellPeriodSet(uint256 percent, uint256 period);
     event TradingLaunched();
@@ -815,8 +781,6 @@ contract Mystery is IERC20, Ownable {
     event FeesSet(uint256 totalFees, uint256 denominator, uint256 sellBias);
     event SwapSettingsSet(uint256 minimum, uint256 maximum, bool enabled);
     event LiquidityPoolSet(address indexed pool, bool enabled);
-    event AirdropSent(address indexed from);
     event AntiDumpTaxSet(uint256 rate, uint256 period, uint256 threshold);
     event TargetLiquiditySet(uint256 percent);
-    event ProtectionToggle(bool isEnabled);
-    }
+}
