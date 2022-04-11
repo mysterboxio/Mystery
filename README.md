@@ -1,2 +1,1 @@
-# Mystery
-Mystery $MYST
+# MYST Box
