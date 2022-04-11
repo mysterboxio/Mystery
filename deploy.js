@@ -10,23 +10,23 @@ const main = async () => {
         Info: (await deployer.getBalance()).toString() 
     };
 
-    // Creating the instance and contract info for the MYSTBox contract
-    let MYSTBoxInstance, MYSTBoxContract;
+    // Creating the instance and contract info for the MYSTLottery contract
+    let MYSTLotteryInstance, MYSTLotteryContract;
 
-    // Getting the MYSTBox contract code (abi, bytecode, name)
-    MYSTBoxContract = await ethers.getContractFactory("MYSTBox");
+    // Getting the MYSTLottery contract code (abi, bytecode, name)
+    MYSTLotteryContract = await ethers.getContractFactory("MYSTLottery");
 
     // Deploys the contracts
-    MYSTBoxInstance = await MYSTBoxContract.deploy();
-    await MYSTBoxInstance.deployed();
+    MYSTLotteryInstance = await MYSTLotteryContract.deploy();
+    await MYSTLotteryInstance.deployed();
 
     // Saving the info to be logged in the table (deployer address)
-    var MYSTBoxLog = { Label: "Deployed MYSTBox contract Address", Info: MYSTBoxInstance.address };
+    var MYSTLotteryLog = { Label: "Deployed MYSTLottery contract Address", Info: MYSTLotteryInstance.address };
 
     console.table([
         deployerLog, 
         deployerBalanceLog,
-        MYSTBoxLog
+        MYSTLotteryLog
     ]);
 }
 // Runs the deployment script, catching any errors

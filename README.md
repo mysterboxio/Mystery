@@ -1,1 +1,1 @@
-# MYST Box
+# MYST Lottery
